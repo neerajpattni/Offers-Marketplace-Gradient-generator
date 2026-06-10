@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offers Gradient Generator</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1d2636;
+        --muted: #5c6b80;
+        --line: #d8e0e8;
+        --panel: #ffffff;
+        --canvas: #eef3f7;
+        --blue: #006ed8;
+        --offer-panel: #435880;
+        --shadow: 0 20px 50px rgba(31, 48, 74, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--canvas);
+        color: var(--ink);
+        font-family:
+          Averta,
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(340px, 520px) minmax(360px, 1fr);
+        gap: 32px;
+        padding: 28px;
+      }
+
+      .controls {
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 32px;
+        letter-spacing: 0;
+      }
+
+      .subcopy {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 20px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(31, 48, 74, 0.04);
+      }
+
+      .section {
+        padding: 18px;
+      }
+
+      .section + .section {
+        border-top: 1px solid var(--line);
+      }
+
+      .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 15px;
+        line-height: 22px;
+      }
+
+      .theme-name {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 18px;
+        text-align: right;
+      }
+
+      .slider-wrap {
+        display: block;
+      }
+
+      .preset-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .pill {
+        min-height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+        padding: 0 12px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .pill.active {
+        border-color: var(--blue);
+        background: #e7f2fc;
+        color: #0057ad;
+        box-shadow: inset 0 0 0 1px rgba(0, 110, 216, 0.2);
+      }
+
+      .hue-range {
+        appearance: none;
+        width: 100%;
+        height: 44px;
+        border-radius: 999px;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .hue-range::-webkit-slider-runnable-track {
+        height: 14px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ff1f1f, #ff8a1f, #f5e51b, #85f51b, #22e6d3, #1f62ff, #8832e6, #f222a6);
+        box-shadow: inset 0 0 0 1px rgba(31, 48, 74, 0.12);
+      }
+
+      .hue-range::-webkit-slider-thumb {
+        appearance: none;
+        width: 38px;
+        height: 38px;
+        margin-top: -12px;
+        border: 6px solid var(--blue);
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 3px 10px rgba(31, 48, 74, 0.22);
+      }
+
+      .hue-range::-moz-range-track {
+        height: 14px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ff1f1f, #ff8a1f, #f5e51b, #85f51b, #22e6d3, #1f62ff, #8832e6, #f222a6);
+        box-shadow: inset 0 0 0 1px rgba(31, 48, 74, 0.12);
+      }
+
+      .hue-range::-moz-range-thumb {
+        width: 26px;
+        height: 26px;
+        border: 6px solid var(--blue);
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 3px 10px rgba(31, 48, 74, 0.22);
+      }
+
+      .swatches {
+        display: grid;
+        gap: 10px;
+      }
+
+      .swatch-row {
+        display: grid;
+        grid-template-columns: 44px 1fr 76px;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .swatch-row input[type="color"] {
+        width: 44px;
+        height: 34px;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: transparent;
+      }
+
+      .hex-input {
+        min-width: 0;
+        height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 10px;
+        color: var(--ink);
+        font-family:
+          "SFMono-Regular",
+          Consolas,
+          "Liberation Mono",
+          monospace;
+        font-size: 13px;
+        text-transform: uppercase;
+      }
+
+      .stop-label {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 16px;
+        text-align: right;
+      }
+
+      .lock-label {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 14px;
+        text-align: right;
+      }
+
+      .hex-input:disabled,
+      .swatch-row input[type="color"]:disabled {
+        cursor: not-allowed;
+        opacity: 0.72;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .button {
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--ink);
+        cursor: pointer;
+        padding: 0 14px;
+        font-weight: 600;
+      }
+
+      .button.primary {
+        border-color: var(--blue);
+        background: var(--blue);
+        color: #fff;
+      }
+
+      .button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid rgba(0, 110, 216, 0.28);
+        outline-offset: 2px;
+      }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .switch {
+        position: relative;
+        width: 50px;
+        height: 28px;
+        flex: 0 0 auto;
+      }
+
+      .switch input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+      }
+
+      .track {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: #c3ced9;
+        transition: background 160ms ease;
+      }
+
+      .track::after {
+        content: "";
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(31, 48, 74, 0.25);
+        transition: transform 160ms ease;
+      }
+
+      .switch input:checked + .track {
+        background: var(--blue);
+      }
+
+      .switch input:checked + .track::after {
+        transform: translateX(22px);
+      }
+
+      pre {
+        margin: 0;
+        overflow: auto;
+        border-radius: 8px;
+        background: #202836;
+        color: #f6f9fc;
+        padding: 14px;
+        font-family:
+          "SFMono-Regular",
+          Consolas,
+          "Liberation Mono",
+          monospace;
+        font-size: 13px;
+        line-height: 20px;
+      }
+
+      .contentful-helper {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 18px;
+      }
+
+      .preview-shell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 14px;
+        min-height: calc(100vh - 56px);
+        padding: 20px;
+      }
+
+      .preview-tools {
+        width: min(390px, 100%);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.82);
+        padding: 12px;
+        box-shadow: 0 1px 2px rgba(31, 48, 74, 0.04);
+      }
+
+      .preview-tools h2 {
+        font-size: 14px;
+      }
+
+      .preview-tools .subcopy {
+        font-size: 12px;
+        line-height: 16px;
+      }
+
+      .phone {
+        position: relative;
+        background: var(--offer-panel);
+        width: min(390px, 100%);
+        aspect-ratio: 375 / 652;
+        overflow: hidden;
+        border-radius: 30px;
+        box-shadow: var(--shadow);
+        isolation: isolate;
+      }
+
+      .gradient-layer {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 200ms ease;
+        z-index: 0;
+      }
+
+      .gradient-layer.active {
+        opacity: 1;
+      }
+
+      .phone::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: inherit;
+        pointer-events: none;
+        z-index: 5;
+      }
+
+      .preview-label {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 12px;
+        line-height: 16px;
+        z-index: 4;
+      }
+
+      .mini-array {
+        font-family:
+          "SFMono-Regular",
+          Consolas,
+          "Liberation Mono",
+          monospace;
+        opacity: 0.86;
+      }
+
+      .cards-layer {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: end;
+        padding: 86px 20px 22px;
+        z-index: 3;
+      }
+
+      .cards-layer.visible {
+        display: flex;
+      }
+
+      .carousel {
+        display: flex;
+        gap: 14px;
+        width: 100%;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: thin;
+        padding-bottom: 4px;
+      }
+
+      .offer-card {
+        flex: 0 0 100%;
+        min-height: 424px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-radius: 16px;
+        background: var(--offer-panel);
+        color: #fff;
+        scroll-snap-align: center;
+        box-shadow: 0 14px 30px rgba(19, 30, 49, 0.28);
+      }
+
+      .offer-art {
+        position: relative;
+        height: 164px;
+        flex: 0 0 auto;
+        overflow: hidden;
+      }
+
+      .offer-art.purple {
+        background: linear-gradient(248deg, #550273 8%, #ba85bc 94%);
+      }
+
+      .offer-art.photo {
+        background:
+          linear-gradient(180deg, rgba(67, 88, 128, 0) 0%, rgba(67, 88, 128, 0.8) 100%),
+          linear-gradient(145deg, #eed7b6 0%, #c77b3a 45%, #435880 100%);
+      }
+
+      .offer-art.halo {
+        background:
+          radial-gradient(circle at 52% 48%, rgba(142, 234, 255, 0.72), rgba(44, 153, 244, 0) 28%),
+          linear-gradient(155deg, #18559a 18%, #251643 105%);
+      }
+
+      .vehicle {
+        position: absolute;
+        left: 50%;
+        bottom: 18px;
+        width: 220px;
+        height: 74px;
+        transform: translateX(-50%);
+        border-radius: 42px 52px 28px 28px;
+        background: linear-gradient(180deg, #f5eefb, #a99bcf 62%, #3b416a);
+        box-shadow: 0 18px 20px rgba(14, 17, 36, 0.36);
+      }
+
+      .vehicle::before {
+        content: "";
+        position: absolute;
+        left: 38px;
+        top: 8px;
+        width: 92px;
+        height: 30px;
+        border-radius: 50px 50px 10px 10px;
+        background: linear-gradient(120deg, #241f48, #cfc8f2);
+      }
+
+      .vehicle::after {
+        content: "";
+        position: absolute;
+        left: 28px;
+        right: 28px;
+        bottom: -8px;
+        height: 22px;
+        border-radius: 999px;
+        background:
+          radial-gradient(circle at 18% 50%, #171b25 0 11px, #c7d2dc 12px 15px, transparent 16px),
+          radial-gradient(circle at 82% 50%, #171b25 0 11px, #c7d2dc 12px 15px, transparent 16px);
+      }
+
+      .halo-ring {
+        position: absolute;
+        left: 50%;
+        top: 46px;
+        width: 210px;
+        height: 58px;
+        border: 10px solid rgba(126, 227, 255, 0.82);
+        border-right-color: #1598ff;
+        border-radius: 50%;
+        transform: translateX(-50%) rotate(-1deg);
+      }
+
+      .label {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 4px;
+        background: linear-gradient(90deg, #f6ddff, #66eef3);
+        color: var(--offer-panel);
+        padding: 2px 8px;
+        font-size: 11px;
+        line-height: 16px;
+        letter-spacing: 1px;
+        white-space: nowrap;
+      }
+
+      .offer-content {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 12px;
+        padding: 32px 16px 16px;
+      }
+
+      .offer-card.image-card .offer-content {
+        margin-top: auto;
+        padding-top: 48px;
+        background: linear-gradient(180deg, rgba(67, 88, 128, 0), var(--offer-panel) 42%);
+      }
+
+      .brand-row {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .badge {
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #fff;
+        color: #2f91d0;
+        font-weight: 700;
+        font-size: 12px;
+        border: 3px solid #b8eeff;
+      }
+
+      .copy h3 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        font-weight: 600;
+        line-height: 28px;
+        letter-spacing: 0;
+      }
+
+      .copy p,
+      .legal {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 20px;
+        letter-spacing: 0;
+      }
+
+      .legal {
+        margin-top: auto;
+        font-size: 12px;
+        font-weight: 300;
+        line-height: 18px;
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .cta {
+        min-height: 48px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--blue);
+        color: #fff;
+        font-size: 17px;
+        font-weight: 600;
+        line-height: 24px;
+        letter-spacing: 0.4px;
+      }
+
+      @media (max-width: 880px) {
+        .app {
+          grid-template-columns: 1fr;
+          padding: 18px;
+        }
+
+        .preview-shell {
+          min-height: auto;
+          padding: 8px 0 20px;
+        }
+
+        .phone {
+          width: min(375px, 100%);
+        }
+      }
+
+      @media (max-width: 460px) {
+        .topbar,
+        .section-head,
+        .toggle {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .theme-name {
+          text-align: left;
+        }
+
+        .swatch-row {
+          grid-template-columns: 42px 1fr;
+        }
+
+        .stop-label {
+          grid-column: 2;
+          text-align: left;
+        }
+
+        .cards-layer {
+          padding-inline: 14px;
+        }
+
+        .offer-card {
+          min-height: 410px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="controls" aria-label="Gradient controls">
+        <div class="topbar">
+          <div>
+            <h1>Offers gradient generator</h1>
+            <p class="subcopy">Create Contentful-ready gradients and preview them against marketplace cards.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section">
+            <div class="section-head">
+              <h2>Hue family</h2>
+              <div class="theme-name" id="themeName">Electric car</div>
+            </div>
+            <div class="preset-pills" id="presetPills" aria-label="Gradient presets"></div>
+            <div class="slider-wrap">
+              <input class="hue-range" id="themeSlider" type="range" min="0" max="359" value="200" aria-label="Base hue" />
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-head">
+              <h2>Colour stops</h2>
+              <button class="button" id="resetButton" type="button">Reset</button>
+            </div>
+            <div class="swatches" id="swatches"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-head">
+              <h2>Contentful output</h2>
+              <button class="button primary" id="copyButton" type="button">Copy</button>
+            </div>
+            <pre id="output" aria-label="Contentful gradient output"></pre>
+            <p class="contentful-helper">Copy and paste this into Contentful to add the gradient behind the relevant Offers marketplace carousel card.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="preview-shell" aria-label="Gradient preview">
+        <div class="preview-tools">
+          <div>
+            <h2>Show marketplace cards</h2>
+            <p class="subcopy">Check the gradient with carousel cards.</p>
+          </div>
+          <label class="switch">
+            <input id="cardsToggle" type="checkbox" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="phone" id="preview">
+          <div class="gradient-layer active" id="gradientLayerA"></div>
+          <div class="gradient-layer" id="gradientLayerB"></div>
+          <div class="preview-label">
+            <span id="previewTheme">Electric car</span>
+            <span class="mini-array" id="miniArray">5 stops</span>
+          </div>
+          <div class="cards-layer" id="cardsLayer">
+            <div class="carousel" aria-label="Offer card carousel preview">
+              <article class="offer-card">
+                <div class="offer-art purple">
+                  <span class="label">DRIVESCORE DISCOUNT</span>
+                  <div class="vehicle"></div>
+                </div>
+                <div class="offer-content">
+                  <div class="brand-row">
+                    <div class="badge">FIAT</div>
+                    <div class="copy">
+                      <h3>Insure your Fiat</h3>
+                      <p>We saved your quote for your Fiat 500e. You could save £245 or more by sharing your DriveScore with insurers.</p>
+                    </div>
+                  </div>
+                  <button class="cta" type="button">Continue quote</button>
+                  <p class="legal">**40% of DriveScore users between the age of 26 and 35 with a score over 750 saw a saving of £145 or more.</p>
+                </div>
+              </article>
+
+              <article class="offer-card image-card">
+                <div class="offer-art photo">
+                  <span class="label">DRIVESCORE DISCOUNT</span>
+                  <div class="vehicle"></div>
+                </div>
+                <div class="offer-content">
+                  <div class="copy">
+                    <h3>Are you a good driver?</h3>
+                    <p>Get behind the wheel of your dream car for less</p>
+                  </div>
+                  <button class="cta" type="button">Find car finance offers</button>
+                </div>
+              </article>
+
+              <article class="offer-card image-card">
+                <div class="offer-art halo">
+                  <div class="halo-ring"></div>
+                  <div class="vehicle"></div>
+                </div>
+                <div class="offer-content">
+                  <div class="copy">
+                    <h3>DriveScore Halo</h3>
+                    <p>RAC Breakdown cover included with DriveScore Halo</p>
+                  </div>
+                  <button class="cta" type="button">See Halo packages</button>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const themes = [
+        {
+          id: "electric",
+          name: "Electric car",
+          shortName: "Electric",
+          colours: ["#2C4E68", "#6C997B", "#215F6D", "#364665", "#364665"],
+        },
+        {
+          id: "petrol",
+          name: "Petrol car",
+          shortName: "Petrol",
+          colours: ["#3C3D63", "#966CAF", "#4E487A", "#364665", "#364665"],
+        },
+        {
+          id: "car-finance",
+          name: "Car finance",
+          shortName: "Car finance",
+          colours: ["#C65235", "#C3844D", "#826B5E", "#364665", "#364665"],
+        },
+        {
+          id: "halo",
+          name: "Halo",
+          shortName: "Halo",
+          colours: ["#293884", "#317CB6", "#394E78", "#364665", "#364665"],
+        },
+      ];
+
+      const newPreset = { id: "new", name: "New", shortName: "New" };
+      const presets = [...themes, newPreset];
+
+      const stops = [0, 41, 77, 84, 100];
+      const lockedBaseColour = "#364665";
+      const slider = document.getElementById("themeSlider");
+      const presetPills = document.getElementById("presetPills");
+      const themeName = document.getElementById("themeName");
+      const previewTheme = document.getElementById("previewTheme");
+      const preview = document.getElementById("preview");
+      const gradientLayerA = document.getElementById("gradientLayerA");
+      const gradientLayerB = document.getElementById("gradientLayerB");
+      const output = document.getElementById("output");
+      const swatches = document.getElementById("swatches");
+      const resetButton = document.getElementById("resetButton");
+      const copyButton = document.getElementById("copyButton");
+      const cardsToggle = document.getElementById("cardsToggle");
+      const cardsLayer = document.getElementById("cardsLayer");
+      const miniArray = document.getElementById("miniArray");
+
+      let selectedPreset = "electric";
+      let manualColours = null;
+      let activeGradientLayer = gradientLayerA;
+      let inactiveGradientLayer = gradientLayerB;
+      let hasRenderedGradient = false;
+
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+
+      function hexToRgb(hex) {
+        const clean = hex.replace("#", "");
+        return {
+          r: parseInt(clean.slice(0, 2), 16),
+          g: parseInt(clean.slice(2, 4), 16),
+          b: parseInt(clean.slice(4, 6), 16),
+        };
+      }
+
+      function rgbToHex({ r, g, b }) {
+        return (
+          "#" +
+          [r, g, b]
+            .map((channel) => clamp(Math.round(channel), 0, 255).toString(16).padStart(2, "0"))
+            .join("")
+            .toUpperCase()
+        );
+      }
+
+      function mixRgb(first, second, secondAmount) {
+        const amount = clamp(secondAmount, 0, 1);
+        return {
+          r: first.r + (second.r - first.r) * amount,
+          g: first.g + (second.g - first.g) * amount,
+          b: first.b + (second.b - first.b) * amount,
+        };
+      }
+
+      function rgbToHsl({ r, g, b }) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h = 0;
+        let s = 0;
+        const l = (max + min) / 2;
+
+        if (max !== min) {
+          const delta = max - min;
+          s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+          switch (max) {
+            case r:
+              h = (g - b) / delta + (g < b ? 6 : 0);
+              break;
+            case g:
+              h = (b - r) / delta + 2;
+              break;
+            default:
+              h = (r - g) / delta + 4;
+          }
+          h /= 6;
+        }
+
+        return { h: h * 360, s, l };
+      }
+
+      function hslToRgb({ h, s, l }) {
+        h = ((h % 360) + 360) % 360;
+        h /= 360;
+
+        if (s === 0) {
+          const channel = l * 255;
+          return { r: channel, g: channel, b: channel };
+        }
+
+        const hueToRgb = (p, q, t) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1 / 6) return p + (q - p) * 6 * t;
+          if (t < 1 / 2) return q;
+          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+          return p;
+        };
+
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+
+        return {
+          r: hueToRgb(p, q, h + 1 / 3) * 255,
+          g: hueToRgb(p, q, h) * 255,
+          b: hueToRgb(p, q, h - 1 / 3) * 255,
+        };
+      }
+
+      function generatedColours() {
+        const hue = Number(slider.value);
+        const base = hexToRgb(lockedBaseColour);
+        const primaryHue = hslToRgb({ h: hue, s: 0.5, l: 0.35 });
+        const liftHue = hslToRgb({ h: hue, s: 0.5, l: 0.58 });
+        const middleHue = hslToRgb({ h: hue, s: 0.38, l: 0.42 });
+        const primary = rgbToHex(mixRgb(base, primaryHue, 0.32));
+        const lift = rgbToHex(mixRgb(base, liftHue, 0.74));
+        const middle = rgbToHex(mixRgb(base, middleHue, 0.4));
+        return [primary, lift, middle, lockedBaseColour, lockedBaseColour];
+      }
+
+      function currentThemeLabel() {
+        const preset = presets.find((item) => item.id === selectedPreset);
+        if (selectedPreset === "new") return `New hue · ${Number(slider.value)}°`;
+        return preset?.name ?? "New hue";
+      }
+
+      function formatOutput(colours) {
+        return `[\n${lockFinalStops(colours).map((colour) => `  "${colour.toUpperCase()}"`).join(",\n")}\n]`;
+      }
+
+      function gradientCss(colours) {
+        const stopsCss = lockFinalStops(colours).map((colour, index) => `${colour} ${stops[index]}%`).join(", ");
+        return `linear-gradient(204deg, ${stopsCss})`;
+      }
+
+      function renderPreviewGradient(colours, { animate = true } = {}) {
+        const nextGradient = gradientCss(colours);
+        if (!hasRenderedGradient) {
+          activeGradientLayer.style.backgroundImage = nextGradient;
+          hasRenderedGradient = true;
+          return;
+        }
+
+        if (activeGradientLayer.style.backgroundImage === nextGradient) return;
+
+        if (!animate) {
+          activeGradientLayer.style.backgroundImage = nextGradient;
+          activeGradientLayer.classList.add("active");
+          inactiveGradientLayer.classList.remove("active");
+          inactiveGradientLayer.style.backgroundImage = "";
+          return;
+        }
+
+        inactiveGradientLayer.style.backgroundImage = nextGradient;
+        inactiveGradientLayer.classList.add("active");
+        activeGradientLayer.classList.remove("active");
+
+        const previousLayer = activeGradientLayer;
+        activeGradientLayer = inactiveGradientLayer;
+        inactiveGradientLayer = previousLayer;
+      }
+
+      function lockFinalStops(colours) {
+        return colours.map((colour, index) => (index >= 3 ? lockedBaseColour : colour.toUpperCase()));
+      }
+
+      function normaliseHex(value) {
+        const candidate = value.trim().replace(/^#?/, "#").toUpperCase();
+        return /^#[0-9A-F]{6}$/.test(candidate) ? candidate : null;
+      }
+
+      function renderSwatches(colours) {
+        swatches.innerHTML = "";
+        lockFinalStops(colours).forEach((colour, index) => {
+          const isLocked = index >= 3;
+          const row = document.createElement("label");
+          row.className = "swatch-row";
+
+          const picker = document.createElement("input");
+          picker.type = "color";
+          picker.value = colour;
+          picker.setAttribute("aria-label", `Colour stop ${index + 1}`);
+          picker.disabled = isLocked;
+
+          const text = document.createElement("input");
+          text.className = "hex-input";
+          text.value = colour;
+          text.inputMode = "text";
+          text.setAttribute("aria-label", `Hex value for stop ${index + 1}`);
+          text.disabled = isLocked;
+
+          const stop = document.createElement("span");
+          stop.className = "stop-label";
+          stop.textContent = isLocked ? `${stops[index]}% locked` : `${stops[index]}%`;
+
+          const setManualColour = (nextValue) => {
+            if (isLocked) return;
+            const hex = normaliseHex(nextValue);
+            if (!hex) return;
+            selectedPreset = "new";
+            manualColours = lockFinalStops(getColours());
+            manualColours[index] = hex;
+            picker.value = hex;
+            text.value = hex;
+            update({ shouldRenderSwatches: false, animate: false });
+          };
+
+          picker.addEventListener("input", (event) => setManualColour(event.target.value));
+          text.addEventListener("input", (event) => setManualColour(event.target.value));
+          text.addEventListener("change", (event) => setManualColour(event.target.value));
+
+          row.append(picker, text, stop);
+          swatches.append(row);
+        });
+      }
+
+      function getColours() {
+        if (manualColours) return lockFinalStops(manualColours);
+        const preset = themes.find((item) => item.id === selectedPreset);
+        return preset ? lockFinalStops(preset.colours) : generatedColours();
+      }
+
+      function renderPresetPills() {
+        presetPills.innerHTML = "";
+        presets.forEach((preset) => {
+          const button = document.createElement("button");
+          button.className = `pill${preset.id === selectedPreset ? " active" : ""}`;
+          button.type = "button";
+          button.textContent = preset.shortName;
+          button.setAttribute("aria-pressed", String(preset.id === selectedPreset));
+          button.addEventListener("click", () => {
+            selectedPreset = preset.id;
+            manualColours = null;
+            if (preset.id !== "new" && preset.colours) {
+              slider.value = Math.round(rgbToHsl(hexToRgb(preset.colours[0])).h);
+            }
+            update({ animate: true });
+          });
+          presetPills.append(button);
+        });
+      }
+
+      function update({ shouldRenderSwatches = true, animate = true } = {}) {
+        const colours = getColours();
+        const label = manualColours ? `${currentThemeLabel()} · edited` : currentThemeLabel();
+
+        document.documentElement.style.setProperty("--current-hue", slider.value);
+        themeName.textContent = label;
+        previewTheme.textContent = label;
+        miniArray.textContent = "5 stops";
+        renderPreviewGradient(colours, { animate });
+        output.textContent = formatOutput(colours);
+        renderPresetPills();
+
+        if (shouldRenderSwatches) renderSwatches(colours);
+      }
+
+      slider.addEventListener("input", () => {
+        selectedPreset = "new";
+        manualColours = null;
+        update({ animate: false });
+      });
+
+      resetButton.addEventListener("click", () => {
+        manualColours = null;
+        update({ animate: false });
+      });
+
+      cardsToggle.addEventListener("change", () => {
+        cardsLayer.classList.toggle("visible", cardsToggle.checked);
+      });
+
+      copyButton.addEventListener("click", async () => {
+        const text = output.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          copyButton.textContent = "Copied";
+          setTimeout(() => {
+            copyButton.textContent = "Copy";
+          }, 1300);
+        } catch {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(output);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          copyButton.textContent = "Selected";
+          setTimeout(() => {
+            copyButton.textContent = "Copy";
+          }, 1300);
+        }
+      });
+
+      update();
+    </script>
+  </body>
+</html>
