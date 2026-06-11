@@ -144,6 +144,27 @@
         box-shadow: inset 0 0 0 1px rgba(0, 110, 216, 0.2);
       }
 
+      .pill.add {
+        border-style: dashed;
+      }
+
+      .new-gradient-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: -4px 0 16px;
+      }
+
+      .name-input {
+        min-height: 38px;
+        min-width: 180px;
+        flex: 1;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 10px;
+        color: var(--ink);
+      }
+
       .hue-range {
         appearance: none;
         width: 100%;
@@ -387,6 +408,8 @@
         border-radius: 30px;
         box-shadow: var(--shadow);
         isolation: isolate;
+        touch-action: pan-y;
+        user-select: none;
       }
 
       .gradient-layer {
@@ -440,12 +463,22 @@
         inset: 0;
         display: none;
         align-items: end;
-        padding: 86px 20px 22px;
+        justify-content: center;
+        padding: 82px 22px 22px;
         z-index: 3;
       }
 
       .cards-layer.visible {
         display: flex;
+      }
+
+      .marketplace-card-image {
+        display: block;
+        width: min(330px, 100%);
+        height: auto;
+        border-radius: 16px;
+        filter: drop-shadow(0 14px 30px rgba(19, 30, 49, 0.28));
+        pointer-events: none;
       }
 
       .carousel {
@@ -735,53 +768,7 @@
             <span class="mini-array" id="miniArray">5 stops</span>
           </div>
           <div class="cards-layer" id="cardsLayer">
-            <div class="carousel" aria-label="Offer card carousel preview">
-              <article class="offer-card">
-                <div class="offer-art purple">
-                  <span class="label">DRIVESCORE DISCOUNT</span>
-                  <div class="vehicle"></div>
-                </div>
-                <div class="offer-content">
-                  <div class="brand-row">
-                    <div class="badge">FIAT</div>
-                    <div class="copy">
-                      <h3>Insure your Fiat</h3>
-                      <p>We saved your quote for your Fiat 500e. You could save £245 or more by sharing your DriveScore with insurers.</p>
-                    </div>
-                  </div>
-                  <button class="cta" type="button">Continue quote</button>
-                  <p class="legal">**40% of DriveScore users between the age of 26 and 35 with a score over 750 saw a saving of £145 or more.</p>
-                </div>
-              </article>
-
-              <article class="offer-card image-card">
-                <div class="offer-art photo">
-                  <span class="label">DRIVESCORE DISCOUNT</span>
-                  <div class="vehicle"></div>
-                </div>
-                <div class="offer-content">
-                  <div class="copy">
-                    <h3>Are you a good driver?</h3>
-                    <p>Get behind the wheel of your dream car for less</p>
-                  </div>
-                  <button class="cta" type="button">Find car finance offers</button>
-                </div>
-              </article>
-
-              <article class="offer-card image-card">
-                <div class="offer-art halo">
-                  <div class="halo-ring"></div>
-                  <div class="vehicle"></div>
-                </div>
-                <div class="offer-content">
-                  <div class="copy">
-                    <h3>DriveScore Halo</h3>
-                    <p>RAC Breakdown cover included with DriveScore Halo</p>
-                  </div>
-                  <button class="cta" type="button">See Halo packages</button>
-                </div>
-              </article>
-            </div>
+            <img class="marketplace-card-image" id="marketplaceCardImage" src="assets/electric-frame.png" alt="Electric marketplace card preview" />
           </div>
         </div>
       </section>
@@ -794,32 +781,38 @@
           name: "Electric car",
           shortName: "Electric",
           colours: ["#2C4E68", "#6C997B", "#215F6D", "#364665", "#364665"],
+          cardImage: "assets/electric-frame.png",
+          cardAlt: "Electric marketplace card preview",
         },
         {
           id: "petrol",
           name: "Petrol car",
           shortName: "Petrol",
           colours: ["#3C3D63", "#966CAF", "#4E487A", "#364665", "#364665"],
+          cardImage: "assets/petrol-frame.png",
+          cardAlt: "Petrol marketplace card preview",
         },
         {
           id: "car-finance",
           name: "Car finance",
           shortName: "Car finance",
           colours: ["#C65235", "#C3844D", "#826B5E", "#364665", "#364665"],
+          cardImage: "assets/car-finance-frame.png",
+          cardAlt: "Car finance marketplace card preview",
         },
         {
           id: "halo",
           name: "Halo",
           shortName: "Halo",
           colours: ["#293884", "#317CB6", "#394E78", "#364665", "#364665"],
+          cardImage: "assets/halo-frame.png",
+          cardAlt: "Halo marketplace card preview",
         },
       ];
 
-      const newPreset = { id: "new", name: "New", shortName: "New" };
-      const presets = [...themes, newPreset];
-
       const stops = [0, 41, 77, 84, 100];
       const lockedBaseColour = "#364665";
+      const defaultCard = themes[0];
       const slider = document.getElementById("themeSlider");
       const presetPills = document.getElementById("presetPills");
       const themeName = document.getElementById("themeName");
@@ -833,13 +826,19 @@
       const copyButton = document.getElementById("copyButton");
       const cardsToggle = document.getElementById("cardsToggle");
       const cardsLayer = document.getElementById("cardsLayer");
+      const marketplaceCardImage = document.getElementById("marketplaceCardImage");
       const miniArray = document.getElementById("miniArray");
 
       let selectedPreset = "electric";
+      let customGradients = [];
+      let isAddingGradient = false;
       let manualColours = null;
       let activeGradientLayer = gradientLayerA;
       let inactiveGradientLayer = gradientLayerB;
       let hasRenderedGradient = false;
+      let dragStartX = null;
+      let dragStartY = null;
+      let isDraggingPreview = false;
 
       function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
@@ -943,8 +942,8 @@
       }
 
       function currentThemeLabel() {
-        const preset = presets.find((item) => item.id === selectedPreset);
-        if (selectedPreset === "new") return `New hue · ${Number(slider.value)}°`;
+        const preset = getSelectableFamilies().find((item) => item.id === selectedPreset);
+        if (selectedPreset === "draft") return `New hue · ${Number(slider.value)}°`;
         return preset?.name ?? "New hue";
       }
 
@@ -1021,7 +1020,7 @@
             if (isLocked) return;
             const hex = normaliseHex(nextValue);
             if (!hex) return;
-            selectedPreset = "new";
+            selectedPreset = "draft";
             manualColours = lockFinalStops(getColours());
             manualColours[index] = hex;
             picker.value = hex;
@@ -1040,28 +1039,98 @@
 
       function getColours() {
         if (manualColours) return lockFinalStops(manualColours);
-        const preset = themes.find((item) => item.id === selectedPreset);
+        const preset = getSelectableFamilies().find((item) => item.id === selectedPreset);
         return preset ? lockFinalStops(preset.colours) : generatedColours();
       }
 
+      function getSelectableFamilies() {
+        return [...themes, ...customGradients];
+      }
+
+      function getSelectedFamily() {
+        return getSelectableFamilies().find((item) => item.id === selectedPreset);
+      }
+
+      function updateMarketplaceCard() {
+        const family = getSelectedFamily() ?? defaultCard;
+        marketplaceCardImage.src = family.cardImage ?? defaultCard.cardImage;
+        marketplaceCardImage.alt = family.cardAlt ?? `${family.shortName ?? "Default"} marketplace card preview`;
+      }
+
+      function selectFamily(id, { animate = true } = {}) {
+        const family = getSelectableFamilies().find((item) => item.id === id);
+        if (!family) return;
+        selectedPreset = id;
+        manualColours = null;
+        if (family.colours) {
+          slider.value = Math.round(rgbToHsl(hexToRgb(family.colours[0])).h);
+        }
+        update({ animate });
+      }
+
+      function saveCurrentGradient(name) {
+        const trimmedName = name.trim().slice(0, 25);
+        if (!trimmedName) return;
+        const id = `custom-${Date.now()}`;
+        const colours = lockFinalStops(getColours());
+        customGradients.push({
+          id,
+          name: trimmedName,
+          shortName: trimmedName,
+          colours,
+          cardImage: defaultCard.cardImage,
+          cardAlt: "Default marketplace card preview",
+        });
+        selectedPreset = id;
+        manualColours = null;
+        isAddingGradient = false;
+        update({ animate: true });
+      }
+
       function renderPresetPills() {
+        document.querySelector(".new-gradient-form")?.remove();
         presetPills.innerHTML = "";
-        presets.forEach((preset) => {
+        getSelectableFamilies().forEach((preset) => {
           const button = document.createElement("button");
           button.className = `pill${preset.id === selectedPreset ? " active" : ""}`;
           button.type = "button";
           button.textContent = preset.shortName;
           button.setAttribute("aria-pressed", String(preset.id === selectedPreset));
-          button.addEventListener("click", () => {
-            selectedPreset = preset.id;
-            manualColours = null;
-            if (preset.id !== "new" && preset.colours) {
-              slider.value = Math.round(rgbToHsl(hexToRgb(preset.colours[0])).h);
-            }
-            update({ animate: true });
-          });
+          button.addEventListener("click", () => selectFamily(preset.id, { animate: true }));
           presetPills.append(button);
         });
+
+        const addButton = document.createElement("button");
+        addButton.className = `pill add${isAddingGradient ? " active" : ""}`;
+        addButton.type = "button";
+        addButton.textContent = "+ New";
+        addButton.setAttribute("aria-expanded", String(isAddingGradient));
+        addButton.addEventListener("click", () => {
+          isAddingGradient = true;
+          selectedPreset = selectedPreset === "draft" ? "draft" : selectedPreset;
+          update({ animate: false });
+        });
+        presetPills.append(addButton);
+
+        if (isAddingGradient) {
+          const form = document.createElement("form");
+          form.className = "new-gradient-form";
+          form.innerHTML = `
+            <input class="name-input" id="gradientNameInput" maxlength="25" placeholder="Name gradient" aria-label="Name gradient" />
+            <button class="button primary" type="submit">Save</button>
+            <button class="button" type="button" data-cancel-new>Cancel</button>
+          `;
+          form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            saveCurrentGradient(form.querySelector("#gradientNameInput").value);
+          });
+          form.querySelector("[data-cancel-new]").addEventListener("click", () => {
+            isAddingGradient = false;
+            update({ animate: false });
+          });
+          presetPills.after(form);
+          requestAnimationFrame(() => form.querySelector("#gradientNameInput").focus());
+        }
       }
 
       function update({ shouldRenderSwatches = true, animate = true } = {}) {
@@ -1075,12 +1144,23 @@
         renderPreviewGradient(colours, { animate });
         output.textContent = formatOutput(colours);
         renderPresetPills();
+        updateMarketplaceCard();
 
         if (shouldRenderSwatches) renderSwatches(colours);
       }
 
+      function selectAdjacentFamily(direction) {
+        const families = getSelectableFamilies();
+        if (!families.length) return;
+        const currentIndex = families.findIndex((item) => item.id === selectedPreset);
+        const safeIndex = currentIndex === -1 ? 0 : currentIndex;
+        const nextIndex = clamp(safeIndex + direction, 0, families.length - 1);
+        if (nextIndex === safeIndex && currentIndex !== -1) return;
+        selectFamily(families[nextIndex].id, { animate: true });
+      }
+
       slider.addEventListener("input", () => {
-        selectedPreset = "new";
+        selectedPreset = "draft";
         manualColours = null;
         update({ animate: false });
       });
@@ -1092,6 +1172,31 @@
 
       cardsToggle.addEventListener("change", () => {
         cardsLayer.classList.toggle("visible", cardsToggle.checked);
+      });
+
+      preview.addEventListener("pointerdown", (event) => {
+        dragStartX = event.clientX;
+        dragStartY = event.clientY;
+        isDraggingPreview = true;
+        preview.setPointerCapture?.(event.pointerId);
+      });
+
+      preview.addEventListener("pointerup", (event) => {
+        if (!isDraggingPreview || dragStartX === null || dragStartY === null) return;
+        const deltaX = event.clientX - dragStartX;
+        const deltaY = event.clientY - dragStartY;
+        dragStartX = null;
+        dragStartY = null;
+        isDraggingPreview = false;
+
+        if (Math.abs(deltaX) < 56 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+        selectAdjacentFamily(deltaX < 0 ? 1 : -1);
+      });
+
+      preview.addEventListener("pointercancel", () => {
+        dragStartX = null;
+        dragStartY = null;
+        isDraggingPreview = false;
       });
 
       copyButton.addEventListener("click", async () => {
